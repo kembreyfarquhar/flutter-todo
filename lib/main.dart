@@ -30,6 +30,13 @@ class TodoItem {
 
 class TodoListState extends State<TodoList> {
   List<TodoItem> _todoItems = [];
+  final _scrollController = ScrollController();
+
+  @override
+  void dispose(){
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _editTodoItem(String value, int index) {
     if (value.length > 0) {
@@ -61,6 +68,11 @@ class TodoListState extends State<TodoList> {
       _todoItems[_todoItems.length - 1].isFocused = true;
     });
     _todoItems[_todoItems.length - 1].todoNode.requestFocus();
+    if (_scrollController.hasClients){
+      Future.delayed(Duration(milliseconds: 50), () {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      });
+    }
   }
 
   void _onTapField(index) {
@@ -74,6 +86,7 @@ class TodoListState extends State<TodoList> {
     return new ListView.builder(
       itemCount: _todoItems.length,
       shrinkWrap: true,
+      controller: _scrollController,
       itemBuilder: (BuildContext context, int index) {
         return _buildTodoItem(_todoItems[index].title, index);
       },
@@ -95,13 +108,13 @@ class TodoListState extends State<TodoList> {
           onTap: () => _onTapField(index),
           onSubmitted: (val) => _editTodoItem(val, index),
           focusNode: _todoItems[index].todoNode,
-          decoration: InputDecoration(border: null),
+          decoration: InputDecoration(border: InputBorder.none),
         ),
       ),
     );
   }
 
-  Widget _customAppBar(String text, bool isHome, BuildContext context) {
+  Widget _customAppBar(String text) {
     return AppBar(
       title: Text("$text"),
       centerTitle: true,
@@ -123,7 +136,9 @@ class TodoListState extends State<TodoList> {
   }
 
   Widget _addButton() {
-    if (_todoItems.any((element) => element.isFocused)) {
+    var width = MediaQuery.of(context).size.width;
+
+    if (_todoItems.any((element) => element.isFocused) && width < 700) {
       return Container();
     } else {
       return FloatingActionButton(
@@ -137,7 +152,7 @@ class TodoListState extends State<TodoList> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      appBar: _customAppBar("Todo List", true, context),
+      appBar: _customAppBar("Todo List"),
       body: _buildTodoList(),
       floatingActionButton: _addButton(),
     );
